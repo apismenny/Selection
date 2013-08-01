@@ -1,0 +1,434 @@
+<html>
+<head>
+
+<style>
+
+#main
+{
+  margin-left: 405px;
+}
+
+#menuhl
+{
+  position:fixed;
+  width: 400px;
+  height: 100%;
+  background-color: white;
+  display:none;
+}
+
+
+#menulist
+{
+  top:0px;
+  position:fixed;
+  width: 400px;
+  height: 100%;
+  padding-top:8px;
+  overflow-y: scroll;
+  background-color: white;
+}
+
+.listquote
+{
+  color:black;
+  cursor:hand;
+}
+
+.listtext
+{
+  color:black;
+  cursor:hand;
+  font-family: sans-serif;
+  font-size: small;
+}
+
+#text
+{
+  position:absolute;
+  top: 65px;
+  left: 3px;
+  width: 344px;
+  height:80%;
+  background-color:#fffeef;
+  font-family: sans-serif;
+  border: 3px solid black;
+  padding: 10px;
+  outline:none;
+  display:none;
+  overflow-y: scroll;
+}
+
+#text:focus
+{
+	border-color:gray;
+}
+
+
+</style>
+
+<script>
+
+var selection;
+var maxid = 1;
+var currentid = 0;
+var mySvg;
+var pageurl = '';
+var pagetitle = '';
+
+var colors = ['yellow', 'orange', 'lime', 'pink', 'lightblue', 'lightgrey'];
+
+var marks = {}
+
+var token = "8d0a454e7c07f8b99ef01c313b1ba240bdc6c694";
+
+response = {}
+
+// marks = { 1: {color: 'yellow', text: 'Это одна из пометок'}, 2: {}, 3: {}  }
+
+function SaveSelection() {
+    if (window.getSelection) {
+        sel = window.getSelection();
+        if (sel.getRangeAt && sel.rangeCount) {
+            return sel.getRangeAt(0);
+        }
+    } else if (document.selection && document.selection.createRange) {
+        return document.selection.createRange();
+    }
+    return null;
+}
+
+function RestoreSelection(range) {
+    if (range) {
+        if (window.getSelection) {
+            sel = window.getSelection();
+            sel.removeAllRanges();
+            sel.addRange(range);
+        } else if (document.selection && range.select) {
+            range.select();
+        }
+    }
+}
+
+function httpGet(url){
+
+    var xmlHttp = null;
+
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", url, false);
+    xmlHttp.send(null);
+    return xmlHttp.responseText;
+
+}
+
+
+function Select(color){
+
+ if(currentid == 0){
+	
+	  RestoreSelection(selection);
+	  
+	  var newNode = document.createElement("span");
+	  
+	  id = maxid++;
+	  
+	  newNode.setAttribute("style", "background-color: " + colors[color] );
+	  newNode.setAttribute("id", "hl" +  id);
+	  newNode.setAttribute("onclick", "HLMenu(" + id + ")");
+	  newNode.setAttribute("class", "listquote");
+	  selection.surroundContents(newNode);
+	  
+	  currentid = id;
+	  
+	  marks[currentid] = {color: color, text: ''}
+ 
+	  HLMenu(id);
+	 
+ }
+ else
+ {
+	 document.getElementById("hl" + currentid).style.backgroundColor = colors[color];
+	 
+	 marks[currentid].color = color;
+ 
+	 HLMenu(currentid);
+	 
+
+ }
+
+ 
+}
+
+
+function HLMenu(id){
+
+	if(currentid > 0){
+		document.getElementById("hl" + currentid).style.border = 'none';	
+		marks[currentid].text = text.textContent
+		
+	}
+
+	text.style.display = 'inline';
+	
+	document.getElementById("hl" + id).style.border = 'dashed';
+	document.getElementById("hl" + id).style.borderWidth = 1;		
+	
+	currentid = id;
+
+	menuhl.style.display = 'inline';
+	menulist.style.display = 'none';
+
+	circles.style.display = 'inline';
+	dot.style.display = 'inline';
+	
+
+	dot.setAttribute("cx", marks[id].color*35+20);
+	
+	text.textContent = marks[id].text
+  
+}
+
+function UpdateList(){
+
+	menulist.innerHTML = '<div id="opml"><a href="javascript:ExportOPML()">opml</a></div><br>';
+
+	for(mark in marks){
+	
+		t = document.getElementById('hl' + mark).textContent.split(".");
+		quote = t[0];
+		if (t.length > 1) { quote = quote + '...'}
+		
+		menulist.innerHTML = menulist.innerHTML + '<a style="text-decoration:none" href="javascript:ListClick(' + mark + ')"> <span class="listquote" style="background-color:' + colors[marks[mark].color] + '">' + quote + '</span><br><span class="listtext">' + marks[mark].text + '</span></a><br><br>';
+	}
+
+}
+
+function ListClick(id){
+
+	window.scrollTo(0,document.getElementById("hl" + id).offsetTop-30);
+	HLMenu(id);
+
+}
+
+function ShowHighlightMenu(){
+	
+	id = currentid;
+	
+	if(id > 0){
+			HideHighlightMenu();
+
+			document.getElementById("hl" + id).style.border = 'none';
+			
+	}
+
+	dot.style.display = 'none';
+	
+	menuhl.style.display = 'inline';
+	menulist.style.display = 'none';
+	    
+	
+	
+	circles.style.display = 'inline';
+
+}
+
+function HideHighlightMenu(){
+  circles.style.display = 'none';
+  text.style.display = 'none';
+  
+  menuhl.style.display = 'none';
+  menulist.style.display = 'inline';
+  
+  
+  if(currentid > 0)
+  {
+    marks[currentid].text = text.textContent;
+    text.textContent = '';
+  	document.getElementById("hl" + currentid).style.border = 'none'
+  }
+  currentid = 0;
+  
+  UpdateList();
+}
+
+function ExportOPML()
+{
+
+	opml = '<?xml version="1.0" encoding="utf-8"?>\n<opml version="1.0">\n<head>\n\t<title>opml</title>\n\t<expansionState>0,2</expansionState>\n</head>\n<body>\n';
+
+	for(mark in marks){
+	
+		t = document.getElementById('hl' + mark).textContent;
+		
+/*
+	<outline text="Штука номер раз">
+      <outline text="marks[mark].text"/>
+    </outline>
+*/
+
+		opml += '<outline text="' + t + '">\n';
+		
+		if(marks[mark].text.length > 0){opml += '\t<outline text="' + marks[mark].text + '"/>\n' }
+		
+		opml += '</outline>\n';
+		
+	}
+	
+	opml = opml + '</body>\n</opml>';
+	
+//	uriContent = "data:application/octet-stream," + encodeURIComponent(opml);
+	newWindow=window.open('', 'Export');
+	
+	newWindow.document.write('<html><head><title>Export</title></head><body><pre id="o"></pre></body></html>');
+	
+	newWindow.o.textContent = opml;
+}
+
+
+function UpdateStorage(){
+	localStorage.setItem("select-marks", JSON.stringify(marks));
+	localStorage.setItem("select-maxid", maxid);
+	localStorage.setItem("select-text", main.innerHTML);
+	
+	localStorage.setItem("select-pageurl", pageurl);
+	localStorage.setItem("select-pagetitle", pagetitle);
+}
+
+window.onload = function() {
+
+  var container = document.getElementById("circles");
+  var mySvg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  mySvg.setAttribute("version", "1.2");
+  mySvg.setAttribute("baseProfile", "tiny");
+  container.appendChild(mySvg);
+
+  for(var i = 0; i < colors.length; i++){
+
+    color = colors[i];
+
+    c = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    c.setAttribute("cx", i*35+20);
+    c.setAttribute("cy", "20");
+    c.setAttribute("r", "15");
+    c.setAttribute("fill", color);
+    c.setAttribute("stroke", "black");
+    c.setAttribute("stroke-width", "3");
+    c.setAttribute("cursor", "hand");
+    c.setAttribute("onclick", "Select('" + i + "')");
+    mySvg.appendChild(c);
+  }
+
+    d = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+    d.setAttribute("cx", 20);
+    d.setAttribute("cy", "20");
+    d.setAttribute("r", "3");
+    d.setAttribute("fill", "black");
+    d.setAttribute("display", "none");
+    d.setAttribute("id", "dot");
+    mySvg.appendChild(d);
+
+	main.onmouseup = function() {
+
+	  sel = window.getSelection()
+	  if (!sel.getRangeAt(0).collapsed){
+	    	
+	    ShowHighlightMenu();
+	    selection = SaveSelection();
+	    
+	    currentid = 0;
+	  }
+	  else
+	  {
+		  HideHighlightMenu();  
+	  }
+
+	}
+
+
+	if(window.location.href.split("?url=")[1]){
+		url = window.location.href.split("?url=")[1];
+	}
+	else
+	{
+		url = window.prompt("Insert URL");
+	}
+	
+	if (url.length > 0)
+	{
+	
+		var readurl = "https://readability.com/api/content/v1/parser?url=" + url + "&token=" + token;
+	
+		response = JSON.parse(httpGet(readurl));
+		main.innerHTML = '<h1><a href="' + response.url + '">' + response.title + '</a></h1>';
+		main.innerHTML = main.innerHTML + response.content;
+		pageurl = response.url;
+		pagetitle = response.title;
+		document.title = pagetitle;
+	
+	}
+	
+	else
+	{
+		
+		if(localStorage.getItem('select-marks'))
+		{
+			
+			marks = JSON.parse ( localStorage.getItem("select-marks") );
+			maxid = localStorage.getItem("select-maxid");
+			main.innerHTML = localStorage.getItem("select-text");
+			pageurl = localStorage.getItem("select-pageurl");
+			pagetitle = localStorage.getItem("select-pagetitle");
+			document.title = pagetitle;
+			UpdateList();
+
+		}
+		else
+		{
+			pagetitle = 'Робинзон крузо';
+		}
+		
+	}
+
+	document.title = pagetitle;
+	setInterval(UpdateStorage, 5000);
+
+}
+
+</script>
+
+<body>
+
+<div id="menuhl">
+
+	<a href="javascript:HideHighlightMenu()" style="text-decoration:none"><b>&#10216; marks</b></a>
+	<span id="circles" style="display:none;"></span>
+	<br>
+	<div id="text" contenteditable="true"></div>
+</div>
+
+<div id="menulist">
+	
+</div>
+
+<div id="main">
+
+<p>С самого раннего детства я больше всего на свете любил море. Я завидовал каждому матросу, отправлявшемуся в дальнее плавание. По целым часам я простаивал на морском берегу и не отрывая глаз рассматривал корабли, проходившие мимо.
+</p><p>Моим родителям это очень не нравилось. Отец, старый, больной человек, хотел, чтобы я сделался важным чиновником, служил в королевском суде и получал большое жалованье. Но я мечтал о морских путешествиях. Мне казалось величайшим счастьем скитаться по морям и океанам.
+</p><p>Отец догадывался, что у меня на уме. Однажды он позвал меня к себе и сердито сказал:
+</p><p>- Я знаю: ты хочешь бежать из родного дома. Это безумно. Ты должен остаться. Если ты останешься, я буду тебе добрым отцом, но горе тебе, если ты убежишь! - Тут голос у него задрожал, и он тихо прибавил: - Подумай о больной матери... Она не вынесет разлуки с тобою.
+</p><p>В глазах у него блеснули слезы. Он любил меня и хотел мне добра.
+</p><p>Мне стало жаль старика, я твердо решил остаться в родительском доме и не думать более о морских путешествиях. Но увы! - прошло несколько дней, и от моих добрых намерений ничего не осталось. Меня опять потянуло к морским берегам. Мне стали сниться мачты, волны, паруса, чайки, неизвестные страны, огни маяков.
+</p><p>Через две-три недели после моего разговора с отцом я все же решил убежать. Выбрав время, когда мать была весела и спокойна, я подошел к ней и почтительно сказал:
+</p><p>- Мне уже восемнадцать лет, а в эти годы поздно учиться судейскому делу. Если бы даже я и поступил куда-нибудь на службу, я все равно через несколько ней убежал бы в далекие страны. Мне так хочется видеть чужие края, побывать и в Африке и в Азии! Если я и пристроюсь к какому-нибудь делу, у меня все равно не хватит терпения довести его до конца. Прошу вас, уговорите отца отпустить меня в море хотя бы на короткое время, для пробы; если жизнь моряка не понравится мне, я вернусь домой и больше никуда не уеду. Пусть отец отпустит меня добровольно, так как иначе я буду вынужден уйти из дому без его разрешения.
+</p><p>Мать очень рассердилась на меня и сказала:
+</p><p>- Удивляюсь, как можешь ты думать о морских путешествиях после твоего разговора с отцом! Ведь отец требовал, чтобы ты раз навсегда позабыл о чужих краях. А он лучше тебя понимает, каким делом тебе заниматься. Конечно, если ты хочешь себя погубить, уезжай хоть сию минуту, но можешь быть уверен, что мы с отцом никогда не дадим согласия на твое путешествие. И напрасно ты надеялся, что я стану тебе помогать. Нет, я ни слова не скажу отцу о твоих бессмысленных мечтах. Я не хочу, чтобы впоследствии, когда жизнь на море доведет тебя до нужды и страданий, ты мог упрекнуть свою мать в том, что она потакала тебе.
+</p><p>Потом, через много лет, я узнал, что матушка все же передала отцу весь наш разговор, от слова до слова. Отец был опечален и сказал ей со вздохом:
+</p><p>- Не понимаю, чего ему нужно? На родине он мог бы без труда добиться успеха и счастья. Мы люди небогатые, но кое-какие средства у нас есть. Он может жить вместе с нами, ни в чем не нуждаясь. Если же он пустится странствовать, он испытает тяжкие невзгоды и пожалеет, что не послушался отца. Нет, я не могу отпустить его в море. Вдали от родины он будет одинок, и, если с ним случится беда, у него не найдется друга, который мог бы утешить его. И тогда он раскается в своем безрассудстве, но будет поздно!
+</p><p>И все же через несколько месяцев я бежал из родного дома. Произошло это так. Однажды я поехал на несколько дней в город Гулль. Там я встретил одного приятеля, который собирался отправиться в Лондон на корабле своего отца. Он стал уговаривать меня ехать вместе с ним, соблазняя тем, что проезд на корабле будет бесплатный.
+</p><p>И вот, не спросившись ни у отца, ни у матери, - в недобрый час! - 1 сентября 1651 года я на девятнадцатом году жизни сел на корабль, отправлявшийся в Лондон.
+</p><p>Это был дурной поступок: я бессовестно покинул престарелых родителей, пренебрег их советами и нарушил сыновний долг. И мне очень скоро пришлось раскаяться в том, "что я сделал.
+</p>
+</div>
+
+</body>
+</html>

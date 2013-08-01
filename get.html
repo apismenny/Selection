@@ -1,0 +1,39 @@
+<html>
+<head>
+<script>
+
+url = "http://www.codinghorror.com/blog/2013/07/rule-of-three.html";
+
+token = "8d0a454e7c07f8b99ef01c313b1ba240bdc6c694";
+
+read = "https://readability.com/api/content/v1/parser?url=" + url + "&token=" + token;
+
+response = {}
+
+function httpGet(url){
+
+    var xmlHttp = null;
+
+    xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", url, false);
+    xmlHttp.send(null);
+    return xmlHttp.responseText;
+
+}
+
+window.onload = function (){
+	console.log('starting');
+	response = JSON.parse(httpGet(read));
+	document.write('<h1><a href="' + response.url + '">' + response.title + '</a></h1>');
+	document.write(response.content);
+}
+
+</script>
+
+</head>
+
+<body>
+&nbsp;
+</body>
+
+</html>

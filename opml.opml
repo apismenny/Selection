@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<opml version="1.0">
+  <head>
+    <title>opml</title>
+    <expansionState>0,2</expansionState>
+  </head>
+  <body>
+    <outline text="Штука номер раз">
+      <outline text="Подштучка один"/>
+    </outline>
+    <outline text="Штука номер два">
+      <outline text="Подштучка два"/>
+    </outline>
+  </body>
+</opml>
